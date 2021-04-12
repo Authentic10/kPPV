@@ -1,5 +1,6 @@
 import java.io.*;
 
+
 /**
  * @author hubert.cardot
  */
@@ -11,11 +12,11 @@ public class kPPV {
     // NbExLearning: Number of examples per class used for learning (there are the first ones in data storage for each class)
 
     static int NbEx=50, NbClasses=3, NbFeatures=4, NbExLearning=25;
-    static Double data[][][] = new Double[NbClasses][NbEx][NbFeatures];//there are 50*3 examples at all. All have 4 features
+    static Double[][][] data = new Double[NbClasses][NbEx][NbFeatures];//there are 50*3 examples at all. All have 4 features
 
     // Define train and test arrays
-    static Double train[][][] = new Double[NbClasses][NbExLearning][NbFeatures];
-    static Double test[][][] = new Double[NbClasses][NbExLearning][NbFeatures];
+    static Double[][][] train = new Double[NbClasses][NbExLearning][NbFeatures];
+    static Double[][][] test = new Double[NbClasses][NbExLearning][NbFeatures];
 
 
     public static void main(String[] args) {
@@ -24,27 +25,39 @@ public class kPPV {
         Train_test_split();
 
         //X is an example to classify (to take into data -test examples-)
-        Double X[] = new Double[NbFeatures];
+        //Double X[] = new Double[NbFeatures];
         // distances: table to store all distances between the given example X and all examples in learning set, using ComputeDistances
-        Double distances[] = new Double[NbClasses*NbExLearning];
+        Double[] distances = new Double[NbClasses*NbExLearning];
 
+        //Double[] X = {2.8,2.5,1.1,0.1};
+
+        //ComputeDistances(X, distances);
+
+        //int l = PredictedClass(distances);
+        //System.out.println("Predicted class : "+ l);
+        //Double min = Collections.min(Arrays.asList(distances));
+        //System.out.println("Double : "+ min);
         //To be done
     }
 
 
-    private static void ComputeDistances(Double x[], Double distances[]) {
+    private static void ComputeDistances(Double[] x, Double[] distances) {
         //---compute the distance between an input data x to test and all examples in training set (in data)
-
+        double temp;
+        int index = 0;
         // To be done
-
-        /*int classe = 0, n=0;
-        while (n < 25) {
-            for(int i=0; i<NbFeatures; i++){
-                distances[i] += data[classe][n][i] - x[i];
+        for(int classe=0; classe <NbClasses; classe++){
+            distances[classe] = 0.0;
+            for(int ex = 0; ex < NbExLearning; ex++){
+                temp = 0.0;
+                for(int feature = 0; feature < NbFeatures; feature++){
+                    temp+= Math.pow((train[classe][ex][feature] - x[feature]),2);
+                }
+                System.out.println("Temp "+index+" : "+Math.sqrt(temp));
+                distances[index] = Math.sqrt(temp);
+                index++;
             }
-            n++;
-        }*/
-
+        }
     }
 
     //——-Reading data from iris.data file
@@ -65,24 +78,43 @@ public class kPPV {
                 if (++n==NbEx) { n=0; classe++; }
             }
         }
-        catch (Exception e) { System.out.println(e.toString()); }
+        catch (Exception e) { System.out.println(e); }
     }
 
     // Function to split train and test data
     // Get the first 25 for each class for the training data
     // And the rest for the test data
-    public static void Train_test_split(){
+    private static void Train_test_split(){
         for(int classe=0; classe < NbClasses; classe++){
             for(int ex=0; ex < NbEx; ex++){
                 if(ex < NbExLearning){
-                    for(int feature=0; feature < NbFeatures; feature++)
-                        train[classe][ex][feature] = data[classe][ex][feature];
+                    if (NbFeatures >= 0) System.arraycopy(data[classe][ex], 0, train[classe][ex], 0, NbFeatures);
                 } else {
-                    for(int feature=0; feature < NbFeatures; feature++)
-                        test[classe][ex-NbExLearning][feature] = data[classe][ex][feature];
+                    if (NbFeatures >= 0)
+                        System.arraycopy(data[classe][ex], 0, test[classe][ex - NbExLearning], 0, NbFeatures);
                 }
             }
         }
+    }
+
+    // Function to return the predicted class
+    // It returns 0 if the distance index is between 0 and 25(exclusive)
+    // It returns 1 if the distance index is between 2 and 50(exclusive)
+    // It returns 2 if the distance index is between 50 and 75(exclusive)
+    private static int PredictedClass(Double[] distances){
+        int classe = 0;
+        Double min = distances[0];
+        for(int i = 1; i < distances.length; i++){
+            if(distances[i] < min){
+                if(i < 25)
+                    classe = 0;
+                else if (i < 50)
+                    classe = 1;
+                else if (i < 75)
+                    classe = 2;
+            }
+        }
+        return classe;
     }
 
 

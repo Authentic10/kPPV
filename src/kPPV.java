@@ -60,7 +60,7 @@ public class kPPV {
                 for(int i=0;i<NbFeatures;i++) {
                     subPart = line.substring(i*NbFeatures, i*NbFeatures+3);
                     data[classe][n][i] = Double.parseDouble(subPart);
-                    System.out.println(data[classe][n][i]+" "+classe+" "+n);
+                    //System.out.println(data[classe][n][i]+" "+classe+" "+n);
                 }
                 if (++n==NbEx) { n=0; classe++; }
             }
@@ -76,10 +76,10 @@ public class kPPV {
             for(int ex=0; ex < NbEx; ex++){
                 if(ex < NbExLearning){
                     for(int feature=0; feature < NbFeatures; feature++)
-                        train[classe][ex][feature] = train[classe][ex][feature];
+                        train[classe][ex][feature] = data[classe][ex][feature];
                 } else {
                     for(int feature=0; feature < NbFeatures; feature++)
-                        test[classe][ex][feature] = train[classe][ex][feature];
+                        test[classe][ex-NbExLearning][feature] = data[classe][ex][feature];
                 }
             }
         }

@@ -21,13 +21,14 @@ public class kPPV {
 
     public static void main(String[] args) {
         System.out.println("Starting kPPV");
-        ReadFile();
-        Train_test_split();
+        //ReadFile();
+        //Train_test_split();
+        ConfusionMatrix();
 
         //X is an example to classify (to take into data -test examples-)
         //Double X[] = new Double[NbFeatures];
         // distances: table to store all distances between the given example X and all examples in learning set, using ComputeDistances
-        Double[] distances = new Double[NbClasses*NbExLearning];
+        //Double[] distances = new Double[NbClasses*NbExLearning];
 
         //Double[] X = {2.8,2.5,1.1,0.1};
 
@@ -116,6 +117,29 @@ public class kPPV {
         }
         return classe;
     }
+
+    //private static int
+
+    private static void ConfusionMatrix(){
+        //int[] Iris_setosa = new int[NbClasses];
+        //int[] Iris_versicolor = new int[NbClasses];
+        //int[] Iris_virginica = new int[NbClasses];
+
+        int[] Iris_setosa = {1,2,3};
+        int[] Iris_versicolor = {4,5,6};
+        int[] Iris_virginica = {7,8,9};
+
+        System.out.println("                        Actual               ");
+        System.out.println("            --------------------------------|");
+        System.out.println(" Predicted | Classe 0 | Classe 1 | Classe 2 |");
+        System.out.println("--------------------------------------------|");
+        for(int i=0;i <NbClasses; i++){
+            System.out.println("| Classe "+i+" |    "+Iris_setosa[i]+"     |     "+Iris_versicolor[i]+"    |     "+Iris_virginica[i]+"    |");
+            System.out.println("--------------------------------------------|");
+        }
+
+    }
+
 
 
 } //-------------------End of class kPPV-------------------------

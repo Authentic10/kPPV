@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.stream.IntStream;
 
 
 /**
@@ -20,24 +21,31 @@ public class kPPV {
 
 
     public static void main(String[] args) {
-        System.out.println("Starting kPPV");
-        //ReadFile();
-        //Train_test_split();
-        ConfusionMatrix();
+        System.out.println("Starting kPPV ...");
+        System.out.println("Reading data ...");
+        ReadFile();
+        System.out.println("Splitting data into train and test ...");
+        Train_test_split();
+
+        //ConfusionMatrix();
 
         //X is an example to classify (to take into data -test examples-)
         //Double X[] = new Double[NbFeatures];
         // distances: table to store all distances between the given example X and all examples in learning set, using ComputeDistances
-        //Double[] distances = new Double[NbClasses*NbExLearning];
+        Double[] distances = new Double[NbClasses*NbExLearning];
+        int[] predictions ;
+
+        System.out.println("Testing test data ...");
+        predictions = PredictTestData(distances);
+
+        //for(int i=0; i < predictions.length; i++)
+            //System.out.println("Test ex "+(i+1)+" : "+predictions[i]);
+
+        ConfusionMatrix(predictions);
 
         //Double[] X = {2.8,2.5,1.1,0.1};
-
         //ComputeDistances(X, distances);
-
         //int l = PredictedClass(distances);
-        //System.out.println("Predicted class : "+ l);
-        //Double min = Collections.min(Arrays.asList(distances));
-        //System.out.println("Double : "+ min);
         //To be done
     }
 
@@ -54,7 +62,7 @@ public class kPPV {
                 for(int feature = 0; feature < NbFeatures; feature++){
                     temp+= Math.pow((train[classe][ex][feature] - x[feature]),2);
                 }
-                System.out.println("Temp "+index+" : "+Math.sqrt(temp));
+                //System.out.println("Temp "+index+" : "+Math.sqrt(temp));
                 distances[index] = Math.sqrt(temp);
                 index++;
             }
@@ -118,28 +126,115 @@ public class kPPV {
         return classe;
     }
 
-    //private static int
+    private static int[] PredictTestData(Double[] distances){
 
-    private static void ConfusionMatrix(){
-        //int[] Iris_setosa = new int[NbClasses];
-        //int[] Iris_versicolor = new int[NbClasses];
-        //int[] Iris_virginica = new int[NbClasses];
+        int[] predictions = new int[NbClasses*NbExLearning];
+        int index = 0;
 
-        int[] Iris_setosa = {1,2,3};
-        int[] Iris_versicolor = {4,5,6};
-        int[] Iris_virginica = {7,8,9};
+        for(int classe=0; classe < NbClasses; classe++){
+            for(int ex=0; ex < NbExLearning; ex++){
+                ComputeDistances(test[classe][ex], distances);
+                predictions[index] = PredictedClass(distances);
+                index++;
+            }
+        }
+        return predictions;
+    }
+
+
+    private static void ConfusionMatrix(int[] predictions){
+        int[] Iris_setosa = {0,0,0}, Iris_versicolor = {0,0,0}, Iris_virginica = {0,0,0};
+        //int[] Iris_versicolor = {0,0,0};
+        //int[] Iris_virginica = {0,0,0};
+
+
+        for(int i=0; i < predictions.length; i++){
+            if(i < 25){
+                if(predictions[i] == 0)
+                    Iris_setosa[0]+=1;
+                else if(predictions[i] == 1)
+                    Iris_versicolor[0]+=1;
+                else
+                    Iris_virginica[0]+=1;
+            } else if(i < 50){
+                if(predictions[i] == 0)
+                    Iris_setosa[1]+=1;
+                else if(predictions[i] == 1)
+                    Iris_versicolor[1]+=1;
+                else
+                    Iris_virginica[1]+=1;
+            } else if(i < 75){
+                if(predictions[i] == 0)
+                    Iris_setosa[2]+=1;
+                else if(predictions[i] == 1)
+                    Iris_versicolor[2]+=1;
+                else
+                    Iris_virginica[2]+=1;
+            }
+        }
+
+
+        float Class1Precsion, Class2Precsion, Class3Precsion;
+        float Class1Recall, Class2Recall, Class3Recall;
+
+        float Precision, Recall;
+
+        // Precision
+        /*Class1Precsion = Iris_setosa[0]/(IntStream.of(Iris_setosa).sum());
+        Class2Precsion = Iris_versicolor[1]/(IntStream.of(Iris_versicolor).sum());
+        Class3Precsion = Iris_virginica[2]/(IntStream.of(Iris_virginica).sum());*/
+        Class1Precsion = SafeZero(Iris_setosa, 0);
+        Class2Precsion = SafeZero(Iris_versicolor, 1);
+        Class3Precsion = SafeZero(Iris_virginica, 2);
+
+
+        Precision = (Class1Precsion+ Class2Precsion + Class3Precsion) / 3;
+
+        // Recall
+        /*Class1Recall = Iris_setosa[0]/(Iris_setosa[0]+Iris_versicolor[0]+Iris_virginica[0]);
+        Class2Recall = Iris_versicolor[1]/(Iris_setosa[1]+Iris_versicolor[1]+Iris_virginica[1]);
+        Class3Recall = Iris_virginica[2]/(Iris_setosa[2]+Iris_versicolor[2]+Iris_virginica[2]);*/
+        Class1Recall = SafeZero(Iris_setosa, Iris_versicolor, Iris_virginica, 0);
+        Class2Recall = SafeZero(Iris_versicolor, Iris_setosa, Iris_virginica, 1);
+        Class3Recall = SafeZero(Iris_virginica, Iris_versicolor, Iris_setosa, 2);
+
+
+        Recall = (Class1Recall+ Class2Recall + Class3Recall) / 3;
+
+        System.out.println("\nPRECISION\n");
+
+        System.out.println("Classe 1 Precision : "+ Class1Precsion);
+        System.out.println("Classe 2 Precision : "+ Class2Precsion);
+        System.out.println("Classe 3 Precision : "+ Class3Precsion);
+        System.out.println("\n Overall Precision : "+ Precision);
+
+        System.out.println("\nRECALL\n");
+
+        System.out.println("Classe 1 Recall : "+ Class1Recall);
+        System.out.println("Classe 2 Recall : "+ Class2Recall);
+        System.out.println("Classe 3 Recall : "+ Class3Recall);
+        System.out.println("\nOverall Recall : "+ Recall);
+
+        System.out.println("\n\nCONFUSION MATRIX");
 
         System.out.println("                        Actual               ");
-        System.out.println("            --------------------------------|");
-        System.out.println(" Predicted | Classe 0 | Classe 1 | Classe 2 |");
-        System.out.println("--------------------------------------------|");
+        System.out.println("            --------------------------------");
+        System.out.println(" Predicted | Classe 0 | Classe 1 | Classe 2 ");
+        System.out.println("--------------------------------------------");
         for(int i=0;i <NbClasses; i++){
-            System.out.println("| Classe "+i+" |    "+Iris_setosa[i]+"     |     "+Iris_versicolor[i]+"    |     "+Iris_virginica[i]+"    |");
-            System.out.println("--------------------------------------------|");
+            System.out.println("| Classe "+i+" |    "+Iris_setosa[i]+"     |     "+Iris_versicolor[i]+"    |     "+Iris_virginica[i]+"    ");
+            System.out.println("--------------------------------------------");
         }
 
     }
 
+    private static float SafeZero(int[] array, int idx){
+        return IntStream.of(array).sum() == 0 ? 0 : (float)array[idx]/(IntStream.of(array).sum());
+    }
+
+    private static float SafeZero(int[] array1, int[] array2, int[] array3 , int idx){
+        return (float)array1[idx]/(array1[idx]+array2[idx]+array3[idx]);
+    }
 
 
 } //-------------------End of class kPPV-------------------------

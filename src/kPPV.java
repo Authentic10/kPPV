@@ -25,7 +25,7 @@ public class kPPV {
         System.out.println("Reading data ...");
         ReadFile();
         System.out.println("Splitting data into train and test ...");
-        Train_test_split();
+        TrainTestSplit();
 
         //ConfusionMatrix();
 
@@ -36,17 +36,10 @@ public class kPPV {
         int[] predictions ;
 
         System.out.println("Testing test data ...");
-        predictions = PredictTestData(distances);
-
-        //for(int i=0; i < predictions.length; i++)
-            //System.out.println("Test ex "+(i+1)+" : "+predictions[i]);
+        predictions = PredictTestData(distances, 5);
 
         ConfusionMatrix(predictions);
 
-        //Double[] X = {2.8,2.5,1.1,0.1};
-        //ComputeDistances(X, distances);
-        //int l = PredictedClass(distances);
-        //To be done
     }
 
 
@@ -54,16 +47,45 @@ public class kPPV {
         //---compute the distance between an input data x to test and all examples in training set (in data)
         double temp;
         int index = 0;
-        // To be done
         for(int classe=0; classe <NbClasses; classe++){
-            distances[classe] = 0.0;
             for(int ex = 0; ex < NbExLearning; ex++){
                 temp = 0.0;
                 for(int feature = 0; feature < NbFeatures; feature++){
                     temp+= Math.pow((train[classe][ex][feature] - x[feature]),2);
                 }
-                //System.out.println("Temp "+index+" : "+Math.sqrt(temp));
                 distances[index] = Math.sqrt(temp);
+                index++;
+            }
+        }
+    }
+
+    // Compute distances with a parameter k
+    private static void ComputeDistances(Double[] x, Double[] distances, int k) {
+        //---compute the distance between an input data x to test and all examples in training set (in data)
+        double temp;
+        double min = Double.POSITIVE_INFINITY;
+        int index = 0;
+        for(int classe=0; classe <NbClasses; classe++){
+            for(int ex = 0; ex < NbExLearning; ex++){
+                if((ex+k) < NbExLearning){
+                    for(int i=0; i < k; i++){
+                        temp = 0.0;
+                        for(int feature = 0; feature < NbFeatures; feature++){
+                            if((ex+k) < NbExLearning)
+                                temp+= Math.pow((train[classe][ex+i][feature] - x[feature]),2);
+                        }
+                        temp = Math.sqrt(temp);
+                        if(min > temp)
+                            min = temp;
+                    }
+                } else {
+                    min = 0.0;
+                    for(int feature = 0; feature < NbFeatures; feature++){
+                        min+= Math.pow((train[classe][ex][feature] - x[feature]),2);
+                    }
+                }
+                System.out.println("Min ADDED "+index+" : "+min);
+                distances[index] = min;
                 index++;
             }
         }
@@ -82,7 +104,6 @@ public class kPPV {
                 for(int i=0;i<NbFeatures;i++) {
                     subPart = line.substring(i*NbFeatures, i*NbFeatures+3);
                     data[classe][n][i] = Double.parseDouble(subPart);
-                    //System.out.println(data[classe][n][i]+" "+classe+" "+n);
                 }
                 if (++n==NbEx) { n=0; classe++; }
             }
@@ -93,7 +114,7 @@ public class kPPV {
     // Function to split train and test data
     // Get the first 25 for each class for the training data
     // And the rest for the test data
-    private static void Train_test_split(){
+    private static void TrainTestSplit(){
         for(int classe=0; classe < NbClasses; classe++){
             for(int ex=0; ex < NbEx; ex++){
                 if(ex < NbExLearning){
@@ -121,13 +142,15 @@ public class kPPV {
                     classe = 1;
                 else if (i < 75)
                     classe = 2;
+
+                min = distances[i];
             }
         }
         return classe;
     }
 
     // Predict all the test data
-    private static int[] PredictTestData(Double[] distances){
+    private static int[] PredictTestData(Double[] distances, int k){
         // Array to store all the predictions
         int[] predictions = new int[NbClasses*NbExLearning];
         int index = 0; // Index for the prediction array
@@ -136,7 +159,7 @@ public class kPPV {
             for(int ex=0; ex < NbExLearning; ex++){
                 // Compute Euclidean Distance for each each example in the test
                 // with each example in the training data
-                ComputeDistances(test[classe][ex], distances);
+                ComputeDistances(test[classe][ex], distances, k);
                 // Get the prediction class with PredictedClass function
                 predictions[index] = PredictedClass(distances);
                 index++;
@@ -185,10 +208,6 @@ public class kPPV {
         float Precision, Recall;
 
         // Precision
-        /*Class1Precsion = Iris_setosa[0]/(IntStream.of(Iris_setosa).sum());
-        Class2Precsion = Iris_versicolor[1]/(IntStream.of(Iris_versicolor).sum());
-        Class3Precsion = Iris_virginica[2]/(IntStream.of(Iris_virginica).sum());*/
-
 
         Class1Precision = SafeZero(Iris_setosa, 0);
         Class2Precision = SafeZero(Iris_versicolor, 1);
@@ -197,10 +216,6 @@ public class kPPV {
         Precision = (Class1Precision+ Class2Precision + Class3Precision) / 3;
 
         // Recall
-        /*Class1Recall = Iris_setosa[0]/(Iris_setosa[0]+Iris_versicolor[0]+Iris_virginica[0]);
-        Class2Recall = Iris_versicolor[1]/(Iris_setosa[1]+Iris_versicolor[1]+Iris_virginica[1]);
-        Class3Recall = Iris_virginica[2]/(Iris_setosa[2]+Iris_versicolor[2]+Iris_virginica[2]);*/
-
 
         Class1Recall = SafeZero(Iris_setosa, Iris_versicolor, Iris_virginica, 0);
         Class2Recall = SafeZero(Iris_versicolor, Iris_setosa, Iris_virginica, 1);
@@ -229,10 +244,6 @@ public class kPPV {
         System.out.println("            --------------------------------");
         System.out.println(" Predicted | Classe 0 | Classe 1 | Classe 2 ");
         System.out.println("--------------------------------------------");
-        /*for(int i=0;i <NbClasses; i++){
-            System.out.println("| Classe "+i+" |    "+Iris_setosa[i]+"     |     "+Iris_versicolor[i]+"    |     "+Iris_virginica[i]+"    ");
-            System.out.println("--------------------------------------------");
-        }*/
         System.out.println("| Classe "+0+" |    "+Iris_setosa[0]+"     |     "+Iris_setosa[1]+"    |     "+Iris_setosa[2]+"    ");
         System.out.println("--------------------------------------------");
         System.out.println("| Classe "+1+" |    "+Iris_versicolor[0]+"     |     "+Iris_versicolor[1]+"    |     "+Iris_versicolor[2]+"    ");

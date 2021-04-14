@@ -153,7 +153,7 @@ public class kPPV {
 
         for(int i=0; i < predictions.length; i++){
             if(i < 25){ // Check if it's the first class
-                if(predictions[i] == 0)
+                if(predictions[i] == 0) // If prediction is correct
                     Iris_setosa[0]+=1;
                 else if(predictions[i] == 1)
                     Iris_versicolor[0]+=1;
@@ -162,7 +162,7 @@ public class kPPV {
             } else if(i < 50){ // Check if it's the second class
                 if(predictions[i] == 0)
                     Iris_setosa[1]+=1;
-                else if(predictions[i] == 1)
+                else if(predictions[i] == 1) // If prediction is correct
                     Iris_versicolor[1]+=1;
                 else
                     Iris_virginica[1]+=1;
@@ -172,7 +172,7 @@ public class kPPV {
                 else if(predictions[i] == 1)
                     Iris_versicolor[2]+=1;
                 else
-                    Iris_virginica[2]+=1;
+                    Iris_virginica[2]+=1; // If prediction is correct
             }
         }
 
@@ -243,10 +243,12 @@ public class kPPV {
 
     }
 
+    // Function to safely compute the precisions
     private static float SafeZero(int[] array, int idx){
         return IntStream.of(array).sum() == 0 ? 0 : (float)array[idx]/(IntStream.of(array).sum());
     }
 
+    // Function to safely compute the recalls
     private static float SafeZero(int[] array1, int[] array2, int[] array3 , int idx){
         return (float)array1[idx]/(array1[idx]+array2[idx]+array3[idx]);
     }

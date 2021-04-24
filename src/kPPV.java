@@ -1,4 +1,4 @@
-﻿import java.io.*;
+import java.io.*;
 import java.util.stream.IntStream;
 
 
@@ -24,21 +24,23 @@ public class kPPV {
         System.out.println("Starting kPPV ...");
         System.out.println("Reading data ...");
         ReadFile();
-        System.out.println("Splitting data into train and test ...");
-        TrainTestSplit();
-
+        //System.out.println("Splitting data into train and test ...");
+        //TrainTestSplit();
         //ConfusionMatrix();
+
+        CrossValidation(7);
 
         //X is an example to classify (to take into data -test examples-)
         //Double X[] = new Double[NbFeatures];
         // distances: table to store all distances between the given example X and all examples in learning set, using ComputeDistances
-        Double[] distances = new Double[NbClasses*NbExLearning];
+        /*Double[] distances = new Double[NbClasses*NbExLearning];
         int[] predictions ;
 
         System.out.println("Testing test data ...");
-        predictions = PredictTestData(distances, 5);
+        predictions = PredictTestData(distances, 3);
 
-        ConfusionMatrix(predictions);
+        System.out.println("Metrics and Confusion matrix");
+        ConfusionMatrix(predictions);*/
 
     }
 
@@ -84,7 +86,6 @@ public class kPPV {
                         min+= Math.pow((train[classe][ex][feature] - x[feature]),2);
                     }
                 }
-                System.out.println("Min ADDED "+index+" : "+min);
                 distances[index] = min;
                 index++;
             }
@@ -118,10 +119,9 @@ public class kPPV {
         for(int classe=0; classe < NbClasses; classe++){
             for(int ex=0; ex < NbEx; ex++){
                 if(ex < NbExLearning){
-                    if (NbFeatures >= 0) System.arraycopy(data[classe][ex], 0, train[classe][ex], 0, NbFeatures);
+                    System.arraycopy(data[classe][ex], 0, train[classe][ex], 0, NbFeatures);
                 } else {
-                    if (NbFeatures >= 0)
-                        System.arraycopy(data[classe][ex], 0, test[classe][ex - NbExLearning], 0, NbFeatures);
+                    System.arraycopy(data[classe][ex], 0, test[classe][ex - NbExLearning], 0, NbFeatures);
                 }
             }
         }
@@ -252,6 +252,49 @@ public class kPPV {
         System.out.println("--------------------------------------------");
 
 
+    }
+
+    //TrainTestSplit for Cross Validation
+    private static void TrainTestSplit(int inter){
+        int train_counter, test_counter;
+        for(int classe=0; classe < NbClasses; classe++){
+            train_counter =0; test_counter = 0;
+            for(int ex=0; ex < NbEx; ex++){
+                if((inter <= ex) && (ex < NbExLearning+inter)){
+                    //System.out.println("Train "+train_counter);
+                    System.arraycopy(data[classe][ex], 0, train[classe][train_counter], 0, NbFeatures);
+                    train_counter++;
+                } else {
+                    //System.out.println("Test "+test_counter);
+                    System.arraycopy(data[classe][ex], 0, test[classe][test_counter], 0, NbFeatures);
+                    test_counter++;
+                }
+            }
+        }
+    }
+
+    // Cross Validation function
+    private static void CrossValidation(int cv){
+        int inter = 0;
+
+        if(cv <=0)
+            cv = 1;
+        else if (cv > 6)
+            cv = 6;
+
+
+        for(int i=0; i < cv; i++){
+            TrainTestSplit(inter);
+            Double[] distances = new Double[NbClasses*NbExLearning];
+            int[] predictions ;
+
+            System.out.println("\n\nIteration "+(i+1)+" ...");
+            predictions = PredictTestData(distances, 3);
+
+            System.out.println("Metrics and Confusion matrix");
+            ConfusionMatrix(predictions);
+            inter+=5;
+        }
     }
 
     // Function to safely compute the precisions

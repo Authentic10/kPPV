@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.*;
 import java.util.stream.IntStream;
 
 
@@ -24,23 +25,19 @@ public class kPPV {
         System.out.println("Starting kPPV ...");
         System.out.println("Reading data ...");
         ReadFile();
-        //System.out.println("Splitting data into train and test ...");
-        //TrainTestSplit();
-        //ConfusionMatrix();
+        System.out.println("Splitting data into train and test ...");
+        TrainTestSplit();
 
-        CrossValidation(7);
-
-        //X is an example to classify (to take into data -test examples-)
-        //Double X[] = new Double[NbFeatures];
-        // distances: table to store all distances between the given example X and all examples in learning set, using ComputeDistances
-        /*Double[] distances = new Double[NbClasses*NbExLearning];
+        Double[] distances = new Double[NbClasses*NbExLearning];
         int[] predictions ;
 
         System.out.println("Testing test data ...");
-        predictions = PredictTestData(distances, 3);
+        predictions = PredictTestData(distances, 6);
 
         System.out.println("Metrics and Confusion matrix");
-        ConfusionMatrix(predictions);*/
+        ConfusionMatrix(predictions);
+
+        CrossValidation(3);
 
     }
 
@@ -56,37 +53,6 @@ public class kPPV {
                     temp+= Math.pow((train[classe][ex][feature] - x[feature]),2);
                 }
                 distances[index] = Math.sqrt(temp);
-                index++;
-            }
-        }
-    }
-
-    // Compute distances with a parameter k
-    private static void ComputeDistances(Double[] x, Double[] distances, int k) {
-        //---compute the distance between an input data x to test and all examples in training set (in data)
-        double temp;
-        double min = Double.POSITIVE_INFINITY;
-        int index = 0;
-        for(int classe=0; classe <NbClasses; classe++){
-            for(int ex = 0; ex < NbExLearning; ex++){
-                if((ex+k) < NbExLearning){
-                    for(int i=0; i < k; i++){
-                        temp = 0.0;
-                        for(int feature = 0; feature < NbFeatures; feature++){
-                            if((ex+k) < NbExLearning)
-                                temp+= Math.pow((train[classe][ex+i][feature] - x[feature]),2);
-                        }
-                        temp = Math.sqrt(temp);
-                        if(min > temp)
-                            min = temp;
-                    }
-                } else {
-                    min = 0.0;
-                    for(int feature = 0; feature < NbFeatures; feature++){
-                        min+= Math.pow((train[classe][ex][feature] - x[feature]),2);
-                    }
-                }
-                distances[index] = min;
                 index++;
             }
         }
@@ -149,6 +115,54 @@ public class kPPV {
         return classe;
     }
 
+    private static int PredictedClass(Double[] distances, int k){
+
+        int classe = -1;
+
+        Map<Double, Integer> preds = new HashMap<>();
+
+        for(int i = 0; i <distances.length; i++){
+            if (i<25)
+                preds.put(distances[i],0);
+            else if(i <50)
+                preds.put(distances[i],1);
+            else if(i <75)
+                preds.put(distances[i],2);
+        }
+
+        ArrayList<Double> sortedDistances = new ArrayList<Double>(preds.keySet());
+
+        Collections.sort(sortedDistances);
+
+        int classe_0 = 0, classe_1 = 0, classe_2 = 0;
+        int pred, counter = 0;
+
+        for(double x : sortedDistances){
+            if(counter == k )
+                break;
+
+            pred = preds.get(x);
+
+            if(pred==0)
+                classe_0++;
+            else if(pred==1)
+                classe_1++;
+            else if(pred==2)
+                classe_2++;
+
+            counter++;
+        }
+
+        if((classe_0 > classe_1) && (classe_0 > classe_2))
+            classe = 0;
+        else if((classe_1 > classe_0) && (classe_1 > classe_2))
+            classe = 1;
+        else if((classe_2 > classe_0) && (classe_2 > classe_1))
+            classe = 2;
+
+        return classe;
+    }
+
     // Predict all the test data
     private static int[] PredictTestData(Double[] distances, int k){
         // Array to store all the predictions
@@ -159,9 +173,12 @@ public class kPPV {
             for(int ex=0; ex < NbExLearning; ex++){
                 // Compute Euclidean Distance for each each example in the test
                 // with each example in the training data
-                ComputeDistances(test[classe][ex], distances, k);
+                ComputeDistances(test[classe][ex], distances);
                 // Get the prediction class with PredictedClass function
-                predictions[index] = PredictedClass(distances);
+                if(k==1)
+                    predictions[index] = PredictedClass(distances);
+                else
+                    predictions[index] = PredictedClass(distances, k);
                 index++;
             }
         }
@@ -254,18 +271,16 @@ public class kPPV {
 
     }
 
-    //TrainTestSplit for Cross Validation
+    //TrainTestSplit for Cross Validation with interval
     private static void TrainTestSplit(int inter){
         int train_counter, test_counter;
         for(int classe=0; classe < NbClasses; classe++){
             train_counter =0; test_counter = 0;
             for(int ex=0; ex < NbEx; ex++){
                 if((inter <= ex) && (ex < NbExLearning+inter)){
-                    //System.out.println("Train "+train_counter);
                     System.arraycopy(data[classe][ex], 0, train[classe][train_counter], 0, NbFeatures);
                     train_counter++;
                 } else {
-                    //System.out.println("Test "+test_counter);
                     System.arraycopy(data[classe][ex], 0, test[classe][test_counter], 0, NbFeatures);
                     test_counter++;
                 }
@@ -275,14 +290,14 @@ public class kPPV {
 
     // Cross Validation function
     private static void CrossValidation(int cv){
-        int inter = 0;
+        int inter = 0; // Interval for split
 
-        if(cv <=0)
+        if(cv <=0) //If user gives value less or equal to 0, compute only one validation
             cv = 1;
-        else if (cv > 6)
+        else if (cv > 6) //If user gives value greater than 6, compute 6 cross validation (can't do more than 6 cross validation)
             cv = 6;
 
-
+        // Compute the validation for each iteration
         for(int i=0; i < cv; i++){
             TrainTestSplit(inter);
             Double[] distances = new Double[NbClasses*NbExLearning];

@@ -3,9 +3,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 
-/**
- * @author hubert.cardot
- */
+
 public class kPPV {
     //General variables for dealing with Iris data (UCI repository)
     // NbEx: number of data per class in dataset
@@ -32,11 +30,12 @@ public class kPPV {
         int[] predictions ;
 
         System.out.println("Testing test data ...");
-        predictions = PredictTestData(distances, 6);
+        predictions = PredictTestData(distances, 3);
 
         System.out.println("Metrics and Confusion matrix");
         ConfusionMatrix(predictions);
 
+        System.out.println("Cross Validation");
         CrossValidation(3);
 
     }
@@ -115,10 +114,12 @@ public class kPPV {
         return classe;
     }
 
+    // Prediction with parameter k
     private static int PredictedClass(Double[] distances, int k){
 
         int classe = -1;
 
+        // HashMap to store distances and predicted classes
         Map<Double, Integer> preds = new HashMap<>();
 
         for(int i = 0; i <distances.length; i++){
@@ -130,13 +131,15 @@ public class kPPV {
                 preds.put(distances[i],2);
         }
 
-        ArrayList<Double> sortedDistances = new ArrayList<Double>(preds.keySet());
-
+        // ArrayList to store and sort the distances for knn
+        ArrayList<Double> sortedDistances = new ArrayList<>(preds.keySet());
+        // Sort the distances
         Collections.sort(sortedDistances);
 
         int classe_0 = 0, classe_1 = 0, classe_2 = 0;
         int pred, counter = 0;
 
+        // Iterate through the sorted distances and get the corresponding prediction class
         for(double x : sortedDistances){
             if(counter == k )
                 break;
@@ -153,6 +156,7 @@ public class kPPV {
             counter++;
         }
 
+        // Check the class that have the highest frequency and return it
         if((classe_0 > classe_1) && (classe_0 > classe_2))
             classe = 0;
         else if((classe_1 > classe_0) && (classe_1 > classe_2))
